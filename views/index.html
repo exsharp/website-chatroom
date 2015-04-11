@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+    <head>
+    	<meta charset="utf-8">
+    	<title>Online ChatRoom</title>
+        <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+    </head>
+	<body>
+
+	<div class="jumbotron">
+		<h1>Login</h1>
+	</div>
+
+	<form class="form-horizontal" role="form" method="post" action="/userLogin">
+	  <div class="form-group">
+	    <label for="inputUsername" class="col-sm-2 control-label">用户名：</label>
+	    <div class="col-sm-3">
+	      <input type="text" class="form-control" id="inputUsername" name="Username" placeholder="Username">
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <label for="inputPassword3" class="col-sm-2 control-label">密码：</label>
+	    <div class="col-sm-3">
+	      <input type="password" class="form-control" id="inputPassword3" name="Password" placeholder="Password">
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <div class="col-sm-offset-2 col-sm-10">
+	      <button type="submit" class="btn btn-primary">登陆</button>
+	      <button onclick="window.location.href='./register.html'" type="button" class="btn btn-primary">注册</button>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <div class="col-sm-offset-2 col-sm-10">
+	      <div class="checkbox">
+	        <label>
+	          <a href="help.html">请求帮助</a>
+	        </label>
+	      </div>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <div class="col-sm-offset-2 col-sm-10">
+	      <div class="checkbox">
+	        <label>
+	          <a href="support.html">在线支持</a>
+	        </label>
+	      </div>
+	    </div>
+	  </div>
+	</form>
+	</body>
+</html>

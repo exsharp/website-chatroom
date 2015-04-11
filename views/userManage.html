@@ -1,0 +1,185 @@
+<!doctype html>
+<html ng-app="userMgr">
+<head>
+	<title>Tutorial</title>
+	<meta charset="utf-8"/>
+	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+	<!--script src="http://apps.bdimg.com/libs/angular.js/1.2.15/angular.min.js"></script-->
+	<script src="./angular.js"></script>
+</head>
+
+<body ng-controller="MainCtrl">
+	<nav class="navbar navbar-default" role="navigation">
+	  <div class="container-fluid">
+	    <div class="navbar-header">
+	      <a class="navbar-brand" href="/chatRoom">Hello,{{%}}</a>
+	    </div>
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	      <ul class="nav navbar-nav">
+	      	<li><a href="/chatRoom">聊天</a></li>
+	        <li><a href="/sysMgr">系统配置</a></li>
+	        <li><a href="/userManagerPrint">人员管理</a></li>
+	        <li><a href="/kefuPage">我是客服</a></li>
+	      </ul>
+	      <ul class="nav navbar-nav navbar-right">
+	      	<li><a href="/quit">离开</a></li>
+	        <li><a href="/help.html">HELP</a></li>
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+	
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-3 well">
+				<h3>人员列表</h3>
+				<ul class="nav nav-pills nav-stacked">
+					<li ng-class="{active: b.name == selected.name}" ng-repeat="b in person">
+						<a href="" ng-click="get(b)">{{b.name}}</a>
+					</li>
+				</ul>
+			</div>
+			<div class="col-sm-6 form-horizontal">
+				<h2>详细信息</h2>
+
+				  <div class="form-group">
+				    <label for="inputUsername" class="col-sm-3 control-label">用户名：</label>
+				    <div class="col-sm-4">
+				      <input type="text" readonly class="form-control" ng-model="selected.name" >
+				    </div>
+				  </div>
+
+
+				  <div class="form-group">
+				    <label for="inputUsername" class="col-sm-3 control-label">密码：</label>
+				    <div class="col-sm-4">
+				      <input type="text" class="form-control" ng-model="selected.password"  >
+				    </div>
+				  </div>
+
+				  <div class="form-group">
+				    <label for="inputUsername" class="col-sm-3 control-label">最近登陆时间：</label>
+				    <div class="col-sm-4">
+				      <input type="text" class="form-control" ng-model="selected.time" readonly>
+				    </div>
+				  </div>
+
+				  <div class="form-group">
+				    <label for="inputUsername" class="col-sm-3 control-label">是否允许登陆：</label>
+				    <div class="col-sm-1">
+				      <input type="checkbox" class="form-control" ng-checked="selected.canlogin" ng-model="selected.canlogin">
+				    </div>
+				  </div>
+
+			</div>
+			<div class="col-sm-3">
+				<button class="btn btn-primary form-control" ng-click="add()">
+					<i class="fa fa-pencil"></i> 添加人员 
+				</button>
+				<div style="height:20px">
+				</div>
+				<button class="btn btn-primary form-control" ng-click="upd()">
+					<i class="fa fa-pencil"></i> 更新人员信息
+				</button>
+				<div style="height:20px">
+				</div>
+				<button class="btn btn-danger form-control" ng-click="del()">
+					<i class="fa fa-trash-o"></i> 删除人员信息
+				</button>
+			</div>
+		</div>
+	</div>
+
+<script>
+	var app = angular.module("userMgr",[]);
+
+	app.controller('MainCtrl', ["$scope","$http", function($scope,$http){
+
+		$scope.selected = null;
+
+		$scope.list = function(){
+			$http.get("/userMgr").success(function(response) {$scope.person = response;});
+		};
+
+		$scope.get = function(idx){
+			$scope.selected = idx;
+			if ("1"==idx.canlogin){
+				$scope.selected.canlogin=1;
+
+			} else{
+				$scope.selected.canlogin=0;
+			}
+			//alert($scope.selected.canlogin)
+		};
+
+		$scope.add = function(){
+			var na = prompt("请输入用户名：");
+			if (na==null){
+				return ;
+			}
+			var pw1 = prompt("请输入密码：");
+			if (pw1==null){
+				return ;
+			}
+			var pw2 = prompt("请再输入一次：");
+			if (pw2==null){
+				return ;
+			}
+			if (pw1!=pw2) {
+				alert("两次密码输入不同");
+				return;
+			}
+			var postdata;
+			postdata="?type=add&name="+na+"&"+"pw="+pw1;
+			url = "/operUser"+postdata;
+
+			$http.get(url).success(function(respon){
+				alert(respon);
+			});
+
+			// $http.post("/operUser",JSON.stringify({name:na,pw:pw1}),{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}).success(function(respon){
+			// 	alert(respon);
+			// });
+			$scope.list();
+		};
+
+		$scope.del = function(){
+			var url;
+			if ($scope.selected==null){
+				alert("没有选中人");
+				return ;
+			} else {
+				alert("你确定要删除吗")
+				url="/operUser?type=del&name="+$scope.selected.name;
+				$http.get(url).success(function(respon){alert(respon);});
+			}
+			$scope.list();
+		};
+
+		$scope.upd = function(){
+			var url;
+			if ($scope.selected==null){
+				alert("没有选中人")
+				return ;
+			} else {
+				var can;
+				if (1==$scope.selected.canlogin)
+				{
+					can = "1";
+				} else {
+					can = "0";
+				}
+				url="/operUser?type=upd&name="+$scope.selected.name+"&password="+$scope.selected.password+"&canlogin="+can;
+				//alert(url)
+				$http.get(url).success(function(respon){alert(respon);});
+			}
+			$scope.list();
+		};
+
+		$scope.list();
+	}]);	
+</script>
+
+</body>
+</html>

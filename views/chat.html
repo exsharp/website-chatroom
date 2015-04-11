@@ -1,0 +1,212 @@
+<!doctype html>
+<html ng-app="chat">
+<head>
+	<title>ChatRoom</title>
+	<meta charset="utf-8"/>
+	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+	<!--script src="http://apps.bdimg.com/libs/angular.js/1.2.15/angular.min.js"></script-->
+	<script src="./angular.js"></script>
+</head>
+<body>
+
+	<nav class="navbar navbar-default" role="navigation">
+	  <div class="container-fluid">
+	    <div class="navbar-header">
+	      <a class="navbar-brand" href="/chatRoom">Hello,{{%}}</a>
+	    </div>
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	      <ul class="nav navbar-nav">
+	      	<li><a href="/chatRoom">聊天</a></li>
+	        <li><a href="/sysMgr">系统配置</a></li>
+	        <li><a href="/userManagerPrint">人员管理</a></li>
+	        <li><a href="/kefuPage">我是客服</a></li>
+	      </ul>
+	      <ul class="nav navbar-nav navbar-right">
+	      	<li><a href="/quit">离开</a></li>
+	        <li><a href="/help.html">HELP</a></li>
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+	<!--div class="jumbotron">
+		<h1>My Chat</h1>
+	</div-->
+
+	<div class="row"  ng-controller="MainCtl">
+		<div class="col-xs-8">
+			<div id="chat" style="height: 400px;overflow:scroll">
+				<ul>
+					<li ng-repeat="m in messages track by $index">{{m}}</li>
+				</ul>
+			</div>
+			<div class="col-xs-0">
+				<input type="text" placeholder="type here" ng-model="msg" ng-enter="send()" style="width:300px;">
+				<button class="btn btn-primary" ng-click="send()">Send</button>
+			</div>
+		</div>
+
+		<div class="row-sm-6">
+			<h5 class="col-sm-3">在线好友</h5>
+			<select id="friends" multiple class="col-xs-3" style="height:150px" ng-model="selected" ng-options="n for n in online">
+				<option value=""></option>
+			</select>
+			<h5 class="col-sm-3">离线好友</h5>
+			<select id="friends" multiple class="col-xs-3" style="height:150px" ng-model="selected" ng-options="n for n in offline">
+				<option value=""></option>
+			</select>
+			<!--input class="" type="text" placeholder="输入要添加的好友" ng-model="inputFriend"-->
+			<button class="col-xs-3 btn btn-primary" ng-click="addFriend()">添加好友</button>
+			<button class="col-xs-3 btn btn-default" ng-click="delFriend()">删除选中好友</button>
+			<p class="col-xs-2">{{selected}}</p>
+		</div>
+	</div>
+</div>
+	
+
+
+<script>
+	var app = angular.module("chat", []);
+
+	app.directive('ngEnter', function () {
+		return function (scope, element, attrs) {
+			element.bind("keydown keypress", function (event) {
+				if(event.which === 13) {
+					scope.$apply(function (){
+						scope.$eval(attrs.ngEnter);
+					});
+					event.preventDefault();
+				}
+			});
+		};
+	});
+
+	app.controller("MainCtl", ["$scope", function($scope) {
+
+		var message ="";
+
+		$scope.messages = [];
+
+		var conn = new WebSocket("ws://192.168.1.118/chat?user={{%}}");
+
+		
+		// called when the server closes the connection
+		conn.onclose = function(e) {
+			$scope.$apply(function(){
+				$scope.messages.push("DISCONNECTED");
+				conn.send("shouldRefresh");
+			});
+		};
+
+		// called when the connection to the server is made
+		conn.onopen = function(e) {
+			$scope.$apply(function(){
+				$scope.messages.push("CONNECTED");
+				conn.send("shouldRefresh");
+			});
+		};
+
+		// called when a message is received from the server
+		conn.onmessage = function(e){
+		 	var temp=String(e.data);
+
+            if (temp.search("friendsList") >= 0) 
+            {
+                showFriendsList(e.data);
+            } 
+            else if (temp.search("addFriendFail") >= 0) 
+            {
+                //alert("添加失败");
+                addFriendFail(e.data);
+            }            
+            else if (temp.search("shouldRefresh") >= 0) 
+            {
+                conn.send("shouldRefresh");
+            }
+			else{
+				$scope.messages.push(e.data);
+			}
+			$scope.$apply();	
+		};
+
+		function showFriendsList(str){
+			var friend = str.split('/');
+			var j = 0 ;
+			friend.shift();
+			friend.shift();
+			var online = [];
+			var offline = [];
+			for (var i = 0 ;i<friend.length;i++){
+				if ("offline"==friend[i])
+				{
+					j = 1;
+					friend.shift();
+				}
+				if (0==j){
+					online.push(friend[i]);
+				} else {
+					offline.push(friend[i]);
+				}
+			}
+			$scope.selected="";
+			$scope.online = online;
+			$scope.offline = offline;
+			//$scope.friends=friend;
+		}
+
+		function addFriendFail(str){
+			var friend = str.split('/');
+			friend.shift();
+			for (var i=0;i<friend.length;i++){
+				alert(friend[i]);
+			}
+		}
+
+		$scope.addFriend = function (){
+			var theFriend = prompt("输入你要添加的好友");
+			//conn.send("addFriend"+","+$scope.inputFriend);
+			conn.send("addFriend"+","+theFriend);
+			$scope.inputFriend = "";
+			conn.send("shouldRefresh");
+		}
+
+		$scope.delFriend = function (){
+			if (null==$scope.selected)
+			{
+				alert("必须选中人");
+			}else{
+				conn.send("delFriend"+","+$scope.selected);
+				alert("成功删除");
+			}
+			conn.send("shouldRefresh");
+		}
+
+		$scope.send = function() {
+			if (null==$scope.selected){
+				alert("没有选择人");
+				return;
+			}
+			if ("" == $scope.msg) {
+				alert("输入要发送的内容");
+				return;
+			}
+			for (var i=0;i<$scope.selected.length;i++){
+				for (var j =0;j<$scope.offline.length;j++){
+					if ($scope.selected[i]==$scope.offline[j])
+					{
+						alert("选中的人有不在线的好友,他们将会在在线的时候收到信息");
+						break;
+					}
+				}
+			}
+			message = $scope.msg+","+$scope.selected;
+			conn.send(message);
+			$scope.msg = "";
+			message = "";
+		}
+	}]);
+</script>
+
+
+</body>
+</html>
